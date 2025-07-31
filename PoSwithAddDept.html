@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Retro Cash Register</title>
+  <style>
+    @font-face {
+      font-family: 'Digital-7';
+      src: url('https://www.dafont.com/digital-7.font') format('truetype');
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #222;
+      color: #ddd;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 1200px;
+      gap: 20px;
+    }
+    .invoice-section {
+      flex: 1;
+      background-color: #333;
+      padding: 15px;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+    }
+    .register-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .display {
+      font-family: 'Digital-7', monospace;
+      background-color: #0a280a;
+      color: #7fff7f;
+      padding: 15px;
+      border: 10px solid #444;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 24px;
+      min-height: 100px;
+      text-align: right;
+      box-shadow: inset 0 0 10px #000;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .current-item {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .total-display {
+      font-size: 28px;
+      border-top: 2px solid #7fff7f;
+      padding-top: 10px;
+    }
+    .department-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .department-btn {
+      background-color: #444;
+      color: white;
+      border: none;
+      padding: 15px 5px;
+      font-size: 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .department-btn:hover {
+      background-color: #555;
+    }
+    .input-fields {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .input-fields input {
+      flex: 1;
+      padding: 10px;
+      background-color: #444;
+      border: none;
+      color: white;
+      border-radius: 5px;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .action-btn {
+      flex: 1;
+      padding: 15px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .add-btn { padding: 10px; border-radius: 5px; background-color: #27ae60; color: white; }
+    .add-btn:hover { background-color: #2ecc71; }
+    .clear-btn { background-color: #e74c3c; color: white; }
+    .clear-btn:hover { background-color: #c0392b; }
+    .checkout-btn { background-color: #3498db; color: white; }
+    .checkout-btn:hover { background-color: #2980b9; }
+    .cash-btn { background-color: #f39c12; color: white; }
+    .cash-btn:hover { background-color: #e67e22; }
+    .receipt {
+      white-space: pre-wrap;
+      background: #111;
+      color: #7fff7f;
+      padding: 15px;
+      border: 1px solid #444;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+      min-height: 200px;
+      margin-bottom: 20px;
+    }
+    .error { color: #e74c3c; margin: 10px 0; }
+    .success { color: #2ecc71; }
+    .item-list {
+      border: 1px solid #444;
+      padding: 10px;
+      border-radius: 5px;
+      background: #222;
+      flex-grow: 1;
+    }
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px dashed #444;
+    }
+    .item-row:last-child {
+      border-bottom: none;
+    }
+    .cash-fields {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .cash-fields input {
+      flex: 1;
+      padding: 10px;
+      background-color: #444;
+      border: none;
+      color: white;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="invoice-section">
+      <h2>INVOICE</h2>
+      <div class="receipt" id="receipt">
+        --------------------------
+          MALIK MEDICAL STORE - INVOICE
+        --------------------------
+        Items will appear here
+        --------------------------
+      </div>
+      <div class="item-list" id="itemList">
+        <h3>Current Items</h3>
+        <div id="itemsDisplay"></div>
+        <div id="runningTotal"></div>
+      </div>
+      <div class="cash-fields">
+        <input type="number" id="cash" placeholder="Cash Received" min="0" step="0.01">
+        <button class="action-btn cash-btn" onclick="calculateChange()">CALCULATE CHANGE</button>
+      </div>
+      <div id="changeDisplay" style="text-align: right; font-size: 18px; margin-top: 10px;"></div>
+    </div>
+    
+    <div class="register-section">
+      <div class="display" id="display">
+        <div class="current-item" id="currentItem">READY</div>
+        <div class="total-display" id="totalDisplay">TOTAL: Rs 0.00</div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <input type="text" id="newDepartment" placeholder="New Department Name" style="padding: 10px; border-radius: 5px; border: none; background-color: #444; color: white;">
+        <button class="action-btn add-btn" onclick="addDepartment()">Add Department</button>
+      </div>
+      <div id="departmentButtons" class="department-buttons"></div>
+
+      <div class="input-fields">
+        <input type="text" id="itemName" placeholder="Item Name" onkeydown="handleKeyDown(event)">
+        <input type="number" id="price" placeholder="Price" min="0" step="0.01" onkeydown="handleKeyDown(event)">
+        <input type="number" id="quantity" placeholder="Qty" min="1" value="1" onkeydown="handleKeyDown(event)">
+      </div>
+      
+      <div id="error" class="error"></div>
+      
+      <div class="action-buttons">
+        <button class="action-btn add-btn" onclick="addItem()">ADD ITEM (ENTER)</button>
+        <button class="action-btn clear-btn" onclick="clearItem()">CLEAR (ESC)</button>
+        <button class="action-btn checkout-btn" onclick="generateInvoice()">CHECKOUT</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let items = [];
+    let runningTotal = 0;
+    let currentDepartment = '';
+
+    const itemNameInput = document.getElementById('itemName');
+    const priceInput = document.getElementById('price');
+    const quantityInput = document.getElementById('quantity');
+    const currentItemDisplay = document.getElementById('currentItem');
+    const totalDisplay = document.getElementById('totalDisplay');
+    const errorElement = document.getElementById('error');
+    const cashInput = document.getElementById('cash');
+    const changeDisplay = document.getElementById('changeDisplay');
+
+    let departments = JSON.parse(localStorage.getItem('departments')) || [
+      'MEDICAL STORE', 'GEN STORE', 'HAFIZ ASLAM', 'STILLMENS',
+      'D SOFT', 'BYE BYE', 'SENIOR', 'MILK',
+      'AZITH', 'NEUROBIOTIC', 'HUMULIN', 'VIGA',
+      'DOSE', 'COCA COLA', 'TOY', 'DOCTOR'
+    ];
+
+    function renderDepartments() {
+      const container = document.getElementById('departmentButtons');
+      container.innerHTML = '';
+      departments.forEach((dept, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'department-btn';
+        btn.textContent = dept;
+        btn.onclick = () => selectDepartment(dept);
+        btn.oncontextmenu = (e) => {
+          e.preventDefault();
+          const action = prompt(`Edit name or type "delete" to remove "${dept}":`, dept);
+          if (action === null) return;
+          if (action.toLowerCase() === 'delete') {
+            departments.splice(index, 1);
+          } else if (action.trim()) {
+            departments[index] = action.trim();
+          }
+          localStorage.setItem('departments', JSON.stringify(departments));
+          renderDepartments();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function addDepartment() {
+      const input = document.getElementById('newDepartment');
+      const name = input.value.trim();
+      if (!name) return alert('Enter a department name.');
+      if (departments.includes(name)) return alert('Already exists.');
+      departments.push(name);
+      localStorage.setItem('departments', JSON.stringify(departments));
+      input.value = '';
+      renderDepartments();
+    }
+
+    function selectDepartment(dept) {
+      currentDepartment = dept;
+      currentItemDisplay.textContent = dept;
+      itemNameInput.focus();
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Enter') addItem();
+      else if (e.key === 'Escape') clearItem();
+    }
+
+    function addItem() {
+      errorElement.textContent = '';
+      errorElement.className = 'error';
+      try {
+        const name = itemNameInput.value.trim();
+        const price = parseFloat(priceInput.value);
+        const qty = parseInt(quantityInput.value);
+        if (!currentDepartment) throw new Error('Select department');
+        if (!name) throw new Error('Item name required');
+        if (isNaN(price) || price <= 0) throw new Error('Invalid price');
+        if (isNaN(qty) || qty <= 0) throw new Error('Invalid quantity');
+
+        const total = price * qty;
+        items.push({ department: currentDepartment, name, price, quantity: qty, itemTotal: total });
+        runningTotal += total;
+        updateItemDisplay();
+
+        currentItemDisplay.textContent = `${currentDepartment}: ${name}`;
+        totalDisplay.textContent = `TOTAL: Rs ${runningTotal.toFixed(2)}`;
+        itemNameInput.value = '';
+        priceInput.value = '';
+        quantityInput.value = '1';
+        itemNameInput.focus();
+        errorElement.textContent = 'Item added!';
+        errorElement.className = 'error success';
+      } catch (err) {
+        errorElement.textContent = err.message;
+      }
+    }
+
+    function clearItem() {
+      itemNameInput.value = '';
+      priceInput.value = '';
+      quantityInput.value = '1';
+      currentItemDisplay.textContent = currentDepartment || 'READY';
+      itemNameInput.focus();
+    }
+
+    function updateItemDisplay() {
+      const itemsDisplay = document.getElementById('itemsDisplay');
+      const runningTotalElement = document.getElementById('runningTotal');
+      itemsDisplay.innerHTML = '';
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `<span>${item.department} - ${item.name} (${item.quantity} × Rs${item.price.toFixed(2)})</span>
+                         <span>Rs${item.itemTotal.toFixed(2)}</span>`;
+        itemsDisplay.appendChild(row);
+      });
+      runningTotalElement.innerHTML = `<div class="item-row" style="font-weight: bold; margin-top: 10px;">
+        <span>Running Total:</span><span>Rs${runningTotal.toFixed(2)}</span></div>`;
+    }
+
+    function calculateChange() {
+      const cash = parseFloat(cashInput.value);
+      if (isNaN(cash) || cash < 0) {
+        changeDisplay.textContent = 'Enter valid cash amount';
+        changeDisplay.style.color = '#e74c3c';
+        return;
+      }
+      if (cash < runningTotal) {
+        changeDisplay.textContent = `Need Rs ${(runningTotal - cash).toFixed(2)} more`;
+        changeDisplay.style.color = '#e74c3c';
+      } else {
+        changeDisplay.textContent = `Change: Rs ${(cash - runningTotal).toFixed(2)}`;
+        changeDisplay.style.color = '#2ecc71';
+      }
+    }
+
+    function generateInvoice() {
+      errorElement.textContent = '';
+      try {
+        if (items.length === 0) throw new Error('No items to checkout');
+        const cash = parseFloat(cashInput.value);
+        if (isNaN(cash) || cash < runningTotal) throw new Error('Insufficient cash');
+        const now = new Date().toLocaleString();
+        const change = cash - runningTotal;
+        let invoice = `--------------------------\n  MALIK MEDICAL STORE - INVOICE\n--------------------------\nTime: ${now}\n\n`;
+        items.forEach(item => {
+          invoice += `${item.department} - ${item.name} (${item.quantity} × Rs${item.price.toFixed(2)}): Rs${item.itemTotal.toFixed(2)}\n`;
+        });
+        invoice += `--------------------------\nTOTAL: Rs ${runningTotal.toFixed(2)}\nCASH: Rs ${cash.toFixed(2)}\nCHANGE: Rs ${change.toFixed(2)}\n--------------------------\nThank you!`;
+        document.getElementById('receipt').textContent = invoice;
+        errorElement.textContent = 'Invoice generated!';
+        errorElement.className = 'error success';
+      } catch (err) {
+        errorElement.textContent = err.message;
+        errorElement.className = 'error';
+      }
+    }
+
+    // INIT
+    renderDepartments();
+    itemNameInput.focus();
+  </script>
+</body>
+</html>
